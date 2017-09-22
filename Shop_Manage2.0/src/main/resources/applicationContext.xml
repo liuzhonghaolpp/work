@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:websocket="http://www.springframework.org/schema/websocket"
+    xsi:schemaLocation="  
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-4.3.xsd  
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.3.xsd
+    http://www.springframework.org/schema/websocket
+    http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+    <!-- 扫描service -->
+    <context:component-scan base-package="com.liu.Action"></context:component-scan>
+    <context:component-scan base-package="com.liu.Dao"></context:component-scan>
+    <context:component-scan base-package="com.liu.Service"></context:component-scan>
+    <context:property-placeholder location="classpath:db.properties"/>
+    <!-- 配置c3p0数据源-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+      <property name="jdbcUrl" value="${db.url}"></property>
+      <property name="driverClass" value="${db.driverClassName}"></property>  
+      <property name="user" value="${db.username}"></property>  
+      <property name="password" value="${db.password}"></property>
+      <property name="maxPoolSize" value="20"></property>  
+      <property name="minPoolSize" value="1"></property>
+      <!-- 初始化时获取三个连接，取值应在min和max之间 -->
+      <property name="initialPoolSize" value="3"></property>  
+      <property name="maxIdleTime" value="1800"></property>
+    </bean>
+    <!-- 配置sessionFactory -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+      <property name="dataSource" ref="dataSource" />
+      <property name="hibernateProperties">
+        <props>
+         <prop key="dialect">org.hibernate.dialect.SQLServerDialect</prop> <!-- 数据库连接方法 -->
+         <prop key="hibernate.show_sql">true</prop> <!-- 在控制台输出SQL语句 -->
+         <prop key="hibernate.format_sql">true</prop> <!-- 格式化控制台输出的SQL语句 -->
+         <prop key="hibernate.hbm2ddl.auto">update</prop>
+         <prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext</prop>
+        </props>
+      </property>
+      <property name="packagesToScan">
+            <list>
+                <value>com.liu.Entity</value>
+            </list>
+        </property>
+    </bean>
+    <!-- 事务管理 -->   
+    <bean id="txManager"  
+        class="org.springframework.orm.hibernate4.HibernateTransactionManager">  
+        <property name="sessionFactory" ref="sessionFactory" />  
+    </bean>  
+  
+  
+    <!-- 事务通知 -->  
+    <tx:advice id="txAdvice" transaction-manager="txManager">  
+        <tx:attributes>  
+            <tx:method name="find*" read-only="true" />  
+            <tx:method name="get*" read-only="true" />  
+            <tx:method name="load*" read-only="true" />  
+            <tx:method name="list*" read-only="true" />  
+            <tx:method name="search*" read-only="true" />  
+            <tx:method name="*" rollback-for="Throwable" />  
+        </tx:attributes>  
+    </tx:advice>
+  
+  
+<!-- 配置需要进行事务控制的类 -->  
+<aop:config>  
+    <aop:pointcut id="serviceOperation" expression="bean(*Service) or bean(*Dao)" />  
+    <aop:advisor advice-ref="txAdvice" pointcut-ref="serviceOperation" />  
+</aop:config>  
+</beans>

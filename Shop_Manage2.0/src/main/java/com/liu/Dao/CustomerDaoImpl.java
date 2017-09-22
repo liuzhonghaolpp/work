@@ -1,0 +1,32 @@
+package com.liu.Dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.springframework.stereotype.Repository;
+
+import com.liu.Entity.Customer;
+
+@Repository("customerDao")
+public class CustomerDaoImpl extends BaseDaoImpl<Customer, String> implements CustomerDao {
+
+	@SuppressWarnings("unchecked")
+	public List<Customer> findByAccountAndPassword(String username, String password) {
+		Query query = this.getCurrentSession().createQuery("from Customer where username = ? and password = ?");
+		query.setParameter(0, username);
+		query.setParameter(1, password);
+		return query.list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Customer> findByParam(String hql, Object[] param) {
+		Query q=this.getCurrentSession().createQuery(hql);
+		if(param!=null && param.length>0){
+			for(int i = 0;i<param.length;i++){
+				q.setParameter(i, param[i]);
+			}
+		}
+		return q.list();
+	}
+
+}
